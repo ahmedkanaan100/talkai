@@ -1,50 +1,51 @@
+// src/components/Shell.tsx
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React from "react";
+import * as React from "react";
 
-const nav = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/onboarding", label: "Onboarding" },
-  { href: "/settings", label: "Settings" },
-];
+const NavItem: React.FC<{ href: string; children: React.ReactNode }> = ({
+  href,
+  children,
+}) => {
+  const pathname = usePathname();
+  const active = pathname === href || (href !== "/" && pathname?.startsWith(href));
+  return (
+    <Link
+      href={href}
+      className={`block rounded-lg px-3 py-2 text-sm transition ${
+        active
+          ? "bg-white/10 text-white"
+          : "text-white/70 hover:text-white hover:bg-white/5"
+      }`}
+    >
+      {children}
+    </Link>
+  );
+};
 
 export default function Shell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-
   return (
-    <div className="min-h-screen bg-background text-foreground flex">
+    <div className="min-h-screen grid grid-cols-[260px_1fr] bg-black text-white">
       {/* Sidebar */}
-      <aside className="w-60 border-r border-white/10 p-4 hidden sm:block">
-        <div className="font-bold text-lg mb-6">TalkAI</div>
-        <nav className="space-y-2">
-          {nav.map((n) => {
-            const active = pathname?.startsWith(n.href);
-            return (
-              <Link
-                key={n.href}
-                href={n.href}
-                className={`block rounded px-3 py-2 text-sm transition ${
-                  active ? "bg-white/10" : "hover:bg-white/5"
-                }`}
-              >
-                {n.label}
-              </Link>
-            );
-          })}
+      <aside className="border-r border-white/10 p-4 space-y-6">
+        <div className="text-xl font-semibold">TalkAI</div>
+        <nav className="space-y-1">
+          <NavItem href="/dashboard">Dashboard</NavItem>
+          <NavItem href="/onboarding">Onboarding</NavItem>
+          <NavItem href="/settings">Settings</NavItem>
         </nav>
       </aside>
 
-      {/* Main column */}
-      <div className="flex-1 flex flex-col">
+      {/* Main */}
+      <main className="min-h-screen">
         {/* Top bar */}
-        <header className="h-14 border-b border-white/10 flex items-center justify-between px-4">
-          <div className="sm:hidden font-bold">TalkAI</div>
-          <div className="text-sm opacity-80">Shopify-style clean shell</div>
-        </header>
-
-        <main className="p-6">{children}</main>
-      </div>
+        <div className="border-b border-white/10 px-6 py-3 text-sm text-white/80">
+          Shopify-style clean shell
+        </div>
+        <div className="p-6">{children}</div>
+      </main>
     </div>
   );
 }

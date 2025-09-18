@@ -1,89 +1,221 @@
+// src/app/onboarding/page.tsx
 "use client";
-import { useState } from "react";
 
-const steps = [
-  { id: 1, title: "Business Info" },
-  { id: 2, title: "Phone Setup" },
-  { id: 3, title: "Hours & Services" },
-  { id: 4, title: "Calendar Connect" },
-  { id: 5, title: "AI Voice & Style" },
-];
+import * as React from "react";
 
-function StepIndicator({ current }: { current: number }) {
+type BizInfo = { name: string; email: string };
+const STORAGE_KEY = "talkai:onboarding:bizinfo";
+
+function StepBadge({ n, active }: { n: number; active: boolean }) {
   return (
-    <ol className="flex items-center gap-3 text-sm">
-      {steps.map((s, i) => {
-        const active = current === i;
-        const done = i < current;
-        return (
-          <li key={s.id} className="flex items-center gap-2">
-            <span className={`w-6 h-6 grid place-items-center rounded-full border
-              ${done ? "bg-white text-black border-white"
-                     : active ? "bg-white/10 border-white/50"
-                     : "border-white/20 text-white/60"}`}>
-              {s.id}
-            </span>
-            <span className={active ? "font-semibold" : "opacity-70"}>{s.title}</span>
-            {i < steps.length - 1 && <span className="opacity-30">›</span>}
-          </li>
-        );
-      })}
-    </ol>
+    <span
+      className={[
+        "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold",
+        active ? "bg-white text-black" : "bg-white/10 text-white/70",
+      ].join(" ")}
+    >
+      {n}
+    </span>
   );
 }
 
-export default function Onboarding() {
-  const [i, setI] = useState(0);
-  const next = () => setI(v => Math.min(v + 1, steps.length - 1));
-  const back = () => setI(v => Math.max(v - 1, 0));
+export default function OnboardingPage() {
+  const [step, setStep] = React.useState(1);
 
-  const bodies = [
-    <div key="1" className="space-y-3">
-      <label className="block">
-        <div className="text-sm mb-1">Business Name</div>
-        <input className="w-full bg-transparent border rounded px-3 py-2 border-white/20" placeholder="Acme Dental" />
-      </label>
-      <label className="block">
-        <div className="text-sm mb-1">Support Email</div>
-        <input className="w-full bg-transparent border rounded px-3 py-2 border-white/20" placeholder="support@acme.com" />
-      </label>
-    </div>,
-    <div key="2" className="space-y-3">
-      <div className="text-sm">Choose provider</div>
-      <div className="flex gap-3">
-        <button className="px-3 py-2 rounded border border-white/20">Twilio</button>
-        <button className="px-3 py-2 rounded border border-white/20 opacity-60" disabled>Plivo (soon)</button>
-      </div>
-    </div>,
-    <div key="3" className="space-y-3">
-      <div className="text-sm">Business Hours</div>
-      <input className="w-full bg-transparent border rounded px-3 py-2 border-white/20" placeholder="Mon–Fri 9am–5pm" />
-      <div className="text-sm">Services (comma separated)</div>
-      <input className="w-full bg-transparent border rounded px-3 py-2 border-white/20" placeholder="Sales, Support, Billing" />
-    </div>,
-    <div key="4" className="space-y-3">
-      <div className="text-sm">Connect Calendar</div>
-      <button className="px-3 py-2 rounded border border-white/20">Connect Google Calendar</button>
-    </div>,
-    <div key="5" className="space-y-3">
-      <div className="text-sm">AI Voice & Style</div>
-      <input className="w-full bg-transparent border rounded px-3 py-2 border-white/20" placeholder="Friendly, concise, professional" />
-    </div>,
-  ];
+  const [biz, setBiz] = React.useState<BizInfo>(() => {
+    if (typeof window === "undefined") return { name: "", email: "" };
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as BizInfo) : { name: "", email: "" };
+    } catch {
+      return { name: "", email: "" };
+    }
+  });
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(biz));
+    } catch {}
+  }, [biz]);
+
+  const validStep1 =
+    biz.name.trim().length > 1 && /\S+@\S+\.\S+/.test(biz.email);
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <h1 className="text-2xl font-bold">Onboarding</h1>
-      <StepIndicator current={i} />
-      <div className="rounded-xl border border-white/10 p-4">{bodies[i]}</div>
-      <div className="flex justify-between">
-        <button onClick={back} className="px-3 py-2 rounded border border-white/20 disabled:opacity-40" disabled={i===0}>
-          Back
-        </button>
-        <button onClick={next} className="px-3 py-2 rounded bg-white text-black disabled:opacity-40"
-          disabled={i===steps.length-1}>
-          {i===steps.length-1 ? "Finish" : "Continue"}
-        </button>
+    <div className="max-w-5xl">
+      <h1 className="mb-6 text-2xl font-bold">Onboarding</h1>
+
+      {/* Stepper */}
+      <div className="mb-6 flex items-center gap-6 text-sm">
+        <div className="flex items-center gap-2">
+          <StepBadge n={1} active={step === 1} />
+          <div className={step === 1 ? "text-white" : "text-white/70"}>
+            <div className="font-medium">Business Info</div>
+          </div>
+        </div>
+        <span className="opacity-40">›</span>
+        <div className="flex items-center gap-2">
+          <StepBadge n={2} active={step === 2} />
+          <div className={step === 2 ? "text-white" : "text-white/70"}>
+            <div className="font-medium">Phone Setup</div>
+          </div>
+        </div>
+        <span className="opacity-40">›</span>
+        <div className="flex items-center gap-2">
+          <StepBadge n={3} active={step === 3} />
+          <div className={step === 3 ? "text-white" : "text-white/70"}>
+            <div className="font-medium">Hours & Services</div>
+          </div>
+        </div>
+        <span className="opacity-40">›</span>
+        <div className="flex items-center gap-2">
+          <StepBadge n={4} active={step === 4} />
+          <div className={step === 4 ? "text-white" : "text-white/70"}>
+            <div className="font-medium">Calendar Connect</div>
+          </div>
+        </div>
+        <span className="opacity-40">›</span>
+        <div className="flex items-center gap-2">
+          <StepBadge n={5} active={step === 5} />
+          <div className={step === 5 ? "text-white" : "text-white/70"}>
+            <div className="font-medium">AI Voice & Style</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Panels */}
+      <div className="rounded-2xl border border-white/10 p-6">
+        {step === 1 && (
+          <div className="space-y-4">
+            <label className="block">
+              <span className="mb-1 block text-sm text-white/70">
+                Business Name
+              </span>
+              <input
+                className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 outline-none ring-0 focus:border-white/20"
+                placeholder="Acme Dental"
+                value={biz.name}
+                onChange={(e) => setBiz({ ...biz, name: e.target.value })}
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-sm text-white/70">
+                Support Email
+              </span>
+              <input
+                className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 outline-none ring-0 focus:border-white/20"
+                placeholder="support@acme.com"
+                value={biz.email}
+                onChange={(e) => setBiz({ ...biz, email: e.target.value })}
+              />
+            </label>
+
+            <div className="mt-6 flex justify-between">
+              <button
+                className="cursor-not-allowed rounded-md border border-white/15 px-4 py-2 opacity-50"
+                disabled
+              >
+                Back
+              </button>
+              <button
+                disabled={!validStep1}
+                onClick={() => setStep(2)}
+                className="rounded-md bg-white px-4 py-2 text-black disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-4">
+            <p className="opacity-70">
+              Step 2: Phone Setup (Twilio/number provisioning will go here).
+            </p>
+            <div className="mt-6 flex justify-between">
+              <button
+                className="rounded-md border border-white/15 px-4 py-2"
+                onClick={() => setStep(1)}
+              >
+                Back
+              </button>
+              <button
+                className="rounded-md bg-white px-4 py-2 text-black"
+                onClick={() => setStep(3)}
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-4">
+            <p className="opacity-70">
+              Step 3: Hours & Services (opening hours and call routing rules).
+            </p>
+            <div className="mt-6 flex justify-between">
+              <button
+                className="rounded-md border border-white/15 px-4 py-2"
+                onClick={() => setStep(2)}
+              >
+                Back
+              </button>
+              <button
+                className="rounded-md bg-white px-4 py-2 text-black"
+                onClick={() => setStep(4)}
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 4 && (
+          <div className="space-y-4">
+            <p className="opacity-70">
+              Step 4: Calendar Connect (Google Calendar OAuth placeholder).
+            </p>
+            <div className="mt-6 flex justify-between">
+              <button
+                className="rounded-md border border-white/15 px-4 py-2"
+                onClick={() => setStep(3)}
+              >
+                Back
+              </button>
+              <button
+                className="rounded-md bg-white px-4 py-2 text-black"
+                onClick={() => setStep(5)}
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 5 && (
+          <div className="space-y-4">
+            <p className="opacity-70">
+              Step 5: AI Voice & Style (tone, persona, playbook selection).
+            </p>
+            <div className="mt-6 flex justify-between">
+              <button
+                className="rounded-md border border-white/15 px-4 py-2"
+                onClick={() => setStep(4)}
+              >
+                Back
+              </button>
+              <button
+                className="rounded-md bg-white px-4 py-2 text-black"
+                onClick={() => alert("Onboarding complete ✅")}
+              >
+                Finish
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
